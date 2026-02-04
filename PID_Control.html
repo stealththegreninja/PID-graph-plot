@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>P / PI / PID Control Demo</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<style>
+body {
+  background:#0f1116;
+  color:#eaeaf0;
+  font-family:Arial;
+  margin:25px;
+}
+input[type=range]{width:240px;}
+.controls{margin-bottom:14px;}
+.value{display:inline-block;width:50px;text-align:right;}
+</style>
+</head>
+
+<body>
+
+<h2>P / PI / PID Interactive Simulation</h2>
+
+<div class="controls">
+Mode:
+<select id="mode">
+  <option value="P">P</option>
+  <option value="PI">PI</option>
+  <option value="PID">PID</option>
+</select>
+</div>
+
+<div class="controls">
+Kp <input id="kp" type="range" min="0" max="3" step="0.01" value="1.0">
+<span class="value" id="kpv">1.00</span>
+</div>
+
+<div class="controls">
+Ki <input id="ki" type="range" min="0" max="2" step="0.01" value="0.0">
+<span class="value" id="kiv">0.00</span>
+</div>
+
+<div class="controls">
+Kd <input id="kd" type="range" min="0" max="1" step="0.01" value="0.0">
+<span class="value" id="kdv">0.00</span>
+</div>
+
+<div id="plot" style="max-width:900px;height:480px;"></div>
+
+<script>
+
+const setpoint=1.0;
+const T=8;
+const dt=0.01;
+const tau=0.6;
+const umin=-2, umax=2;
+
+function simulate(Kp,Ki,Kd,mode){
+  let y=0, integ=0, lastE=0;
+  let t=[], yh=[];
+  let N=Math.floor(T/dt);
+
+  for(let i=0;i<N;i++){
+    let e=setpoint-y;
+
+    integ+=e*dt;
+    let der=(e-lastE)/dt;
+
+    let u=Kp*e;
+    if(mode!="P") u+=Ki*integ;
+    if(mode=="PID") u+=Kd*der;
+
+    u=Math.max(umin,Math.min(umax,u));
+
+    y+=((-y+u)/tau)*dt;
+
+    t.push(i*dt);
+    yh.push(y);
+    lastE=e;
+  }
+  return {t,yh};
+}
+
+function draw(){
+  let Kp=parseFloat(kp.value);
+  let Ki=parseFloat(ki.value);
+  let Kd=parseFloat(kd.value);
+  let modeSel=mode.value;
+
+  kpv.textContent=Kp.toFixed(2);
+  kiv.textContent=Ki.toFixed(2);
+  kdv.textContent=Kd.toFixed(2);
+
+  let r=simulate(Kp,Ki,Kd,modeSel);
+
+  Plotly.newPlot("plot",[
+    {x:r.t,y:r.yh,mode:"lines",name:"Output"},
+    {x:[0,T],y:[setpoint,setpoint],mode:"lines",line:{dash:"dash"},name:"Setpoint"}
+  ],
+  {
+    paper_bgcolor:"#0f1116",
+    plot_bgcolor:"#0f1116",
+    font:{color:"#eaeaf0"},
+    title:modeSel+" Control – Output vs Time",
+    xaxis:{title:"Time (s)"},
+    yaxis:{title:"Output"}
+  },
+  {displayModeBar:false});
+}
+
+kp.oninput=draw;
+ki.oninput=draw;
+kd.oninput=draw;
+mode.onchange=draw;
+
+draw();
+</script>
+
+</body>
+</html>
