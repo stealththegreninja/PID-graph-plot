@@ -1,1 +1,1 @@
-# PID-graph-plot
+# the higher the control parameters are the aggressive the control system and its correction, too low will lead to sluggish change while too aggressive can become unstable and lead to improper behavior such as oscillation 
