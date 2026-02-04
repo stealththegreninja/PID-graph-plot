@@ -1,1 +1,1 @@
-# the higher the control parameters are the aggressive the control system and its correction, too low will lead to sluggish change while too aggressive can become unstable and lead to improper behavior such as oscillation 
+# The higher the control parameters are the more aggressive the control system and its correction will be. Too low will lead to sluggish change while too high can become unstable and lead to improper behavior such as oscillation 
