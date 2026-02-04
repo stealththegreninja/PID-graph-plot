@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>P Control Simulation</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 24px;
+      background: #0f1116;
+      color: #eaeaf0;
+    }
+    h1 { margin-bottom: 6px; }
+    .controls {
+      margin: 12px 0 18px 0;
+    }
+    input[type=range] {
+      width: 300px;
+    }
+    .value {
+      display: inline-block;
+      width: 60px;
+      text-align: right;
+      margin-left: 8px;
+    }
+    #plot {
+      width: 100%;
+      max-width: 900px;
+      height: 480px;
+    }
+    .note {
+      margin-top: 10px;
+      color: #b8bcc8;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+
+<h1>P Control – Interactive Simulation</h1>
+<div>
+  Simple first-order system with proportional control:
+  <br/>
+  <code>dy/dt = (-y + u)/τ</code>, &nbsp; <code>u = Kp · (setpoint − y)</code>
+</div>
+
+<div class="controls">
+  <label for="kp">Kp:</label>
+  <input id="kp" type="range" min="0" max="3" step="0.01" value="1.2" />
+  <span class="value" id="kpVal">1.20</span>
+</div>
+
+<div id="plot"></div>
+
+<div class="note">
+  Try small Kp (slow, steady-state error), then larger Kp (faster, overshoot/oscillation risk).
+</div>
+
+<script>
+  // ===== Simulation parameters =====
+  const setpoint = 1.0;
+  const T = 8.0;      // total time (s)
+  const dt = 0.01;   // timestep (s)
+  const tau = 0.6;   // plant time constant
+  const uMin = -2.0;
+  const uMax =  2.0;
+
+  function simulateP(Kp) {
+    const n = Math.floor(T / dt);
+    let y = 0.0;
+
+    const t = [];
+    const yHist = [];
+
+    for (let i = 0; i < n; i++) {
+      const time = i * dt;
+      const error = setpoint - y;
+      let u = Kp * error;
+
+      // clamp actuator
+      u = Math.max(uMin, Math.min(uMax, u));
+
+      // Euler integration of plant
+      y += ((-y + u) / tau) * dt;
+
+      t.push(time);
+      yHist.push(y);
+    }
+
+    return { t, y: yHist };
+  }
+
+  function draw(Kp) {
+    const result = simulateP(Kp);
+
+    const traceOutput = {
+      x: result.t,
+      y: result.y,
+      mode: "lines",
+      name: "Output y(t)"
+    };
+
+    const traceSetpoint = {
+      x: [0, T],
+      y: [setpoint, setpoint],
+      mode: "lines",
+      name: "Setpoint",
+      line: { dash: "dash" }
+    };
+
+    const layout = {
+      paper_bgcolor: "#0f1116",
+      plot_bgcolor: "#0f1116",
+      font: { color: "#eaeaf0" },
+      title: "P Control — Output vs Time",
+      xaxis: { title: "Time (s)", gridcolor: "#2a2d36" },
+      yaxis: { title: "Output", gridcolor: "#2a2d36" },
+      margin: { t: 50, r: 20, b: 50, l: 60 }
+    };
+
+    Plotly.newPlot("plot", [traceOutput, traceSetpoint], layout, {displayModeBar: false});
+  }
+
+  // Slider wiring
+  const kpSlider = document.getElementById("kp");
+  const kpVal = document.getElementById("kpVal");
+
+  function update() {
+    const Kp = parseFloat(kpSlider.value);
+    kpVal.textContent = Kp.toFixed(2);
+    draw(Kp);
+  }
+
+  kpSlider.addEventListener("input", update);
+
+  // Initial draw
+  update();
+</script>
+
+</body>
+</html>
